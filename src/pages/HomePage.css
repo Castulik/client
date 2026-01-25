@@ -1,0 +1,106 @@
+.home-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  text-align: center;
+}
+
+/* Formulář nahoře */
+.input-group {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.main-input {
+  flex: 1; /* Roztáhne se na zbytek místa */
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+.amount-input {
+  width: 60px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  text-align: center;
+}
+
+.add-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 0 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* Seznam položek */
+.list-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  overflow: hidden; /* Aby rohy zůstaly kulaté */
+}
+
+.item-row {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.item-row:last-child {
+  border-bottom: none;
+}
+
+.item-amount {
+  font-weight: bold;
+  color: #007bff;
+  margin-right: 15px;
+  min-width: 30px;
+}
+
+.item-name {
+  flex: 1;
+  text-align: left;
+  font-size: 18px;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.empty-msg {
+  color: #999;
+  padding: 20px;
+}
+
+/* Tlačítko Optimize */
+.action-area {
+  margin-top: 30px;
+}
+
+.optimize-btn {
+  background-color: #28a745; /* Zelená */
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 50px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3);
+}
+
+.optimize-btn:active {
+  transform: scale(0.98);
+}
