@@ -135,6 +135,7 @@ if __name__ == "__main__":
             # Vypíše hezký JSON pro kontrolu všech polí
             print(json.dumps(sample, indent=4, ensure_ascii=False))
 
+
 # ==========================================
 # 4. ARCHIV (Scraper & Cache logic)
 # ==========================================

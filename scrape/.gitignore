@@ -1,0 +1,8 @@
+# Ignoruj .env kdekoliv
+.env
+
+# Ignoruj __pycache__ složky kdekoliv v projektu (i v podsložkách)
+__pycache__/
+
+# Ignoruj zkompilované Python soubory (pro jistotu)
+*.py[cod]
