@@ -1,4 +1,3 @@
-import { supabase } from '../supabaseClient'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './NakupPage.css'
