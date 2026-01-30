@@ -1,0 +1,131 @@
+[
+  {
+    "id": "101", "name": "Mléko trvanlivé 1,5%", "shop": "Lidl", "category": "mlecne",
+    "shelf_price": 11.90, "amount": 1.0, "unit": "l", 
+    "current_price_per_unit": 11.90, "regular_price_per_unit": 19.90, "discount_percent": 40, "deal_score": 10
+  },
+  {
+    "id": "102", "name": "Mléko čerstvé selské", "shop": "Albert", "category": "mlecne",
+    "shelf_price": 29.90, "amount": 1.0, "unit": "l", 
+    "current_price_per_unit": 29.90, "regular_price_per_unit": 29.90, "discount_percent": 0, "deal_score": 0
+  },
+  {
+    "id": "103", "name": "Mléko polotučné krabice", "shop": "Tesco", "category": "mlecne",
+    "shelf_price": 16.90, "amount": 1.0, "unit": "l", 
+    "current_price_per_unit": 16.90, "regular_price_per_unit": 18.90, "discount_percent": 10, "deal_score": 4
+  },
+  {
+    "id": "104", "name": "Mléko Jihočeské", "shop": "Coop", "category": "mlecne",
+    "shelf_price": 21.90, "amount": 1.0, "unit": "l", 
+    "current_price_per_unit": 21.90, "regular_price_per_unit": 21.90, "discount_percent": 0, "deal_score": 0
+  },
+  {
+    "id": "105", "name": "Mléko BIO", "shop": "Flop", "category": "mlecne",
+    "shelf_price": 35.90, "amount": 1.0, "unit": "l", 
+    "current_price_per_unit": 35.90, "regular_price_per_unit": 35.90, "discount_percent": 0, "deal_score": 0
+  },
+
+  {
+    "id": "201", "name": "Pilsner Urquell plech", "shop": "Lidl", "category": "alkohol",
+    "shelf_price": 22.90, "amount": 0.5, "unit": "l", 
+    "current_price_per_unit": 45.80, "regular_price_per_unit": 63.80, "discount_percent": 28, "deal_score": 8
+  },
+  {
+    "id": "202", "name": "Pilsner Urquell láhev", "shop": "Albert", "category": "alkohol",
+    "shelf_price": 19.90, "amount": 0.5, "unit": "l", 
+    "current_price_per_unit": 39.80, "regular_price_per_unit": 57.80, "discount_percent": 31, "deal_score": 9
+  },
+  {
+    "id": "203", "name": "Pilsner Urquell Multipack (6ks)", "shop": "Tesco", "category": "alkohol",
+    "shelf_price": 139.90, "amount": 3.0, "unit": "l", 
+    "current_price_per_unit": 46.63, "regular_price_per_unit": 63.30, "discount_percent": 26, "deal_score": 7
+  },
+  {
+    "id": "204", "name": "Pivo Svijany", "shop": "Coop", "category": "alkohol",
+    "shelf_price": 14.90, "amount": 0.5, "unit": "l", 
+    "current_price_per_unit": 29.80, "regular_price_per_unit": 29.80, "discount_percent": 0, "deal_score": 2
+  },
+  {
+    "id": "205", "name": "Pivo Braník 2L PET", "shop": "Flop", "category": "alkohol",
+    "shelf_price": 44.90, "amount": 2.0, "unit": "l", 
+    "current_price_per_unit": 22.45, "regular_price_per_unit": 22.45, "discount_percent": 0, "deal_score": 5
+  },
+
+  {
+    "id": "301", "name": "Máslo 250g", "shop": "Lidl", "category": "mlecne",
+    "shelf_price": 39.90, "amount": 0.25, "unit": "kg", 
+    "current_price_per_unit": 159.60, "regular_price_per_unit": 239.60, "discount_percent": 33, "deal_score": 9
+  },
+  {
+    "id": "302", "name": "Máslo farmářské", "shop": "Albert", "category": "mlecne",
+    "shelf_price": 64.90, "amount": 0.25, "unit": "kg", 
+    "current_price_per_unit": 259.60, "regular_price_per_unit": 259.60, "discount_percent": 0, "deal_score": 0
+  },
+  {
+    "id": "303", "name": "Máslo malé (125g)", "shop": "Tesco", "category": "mlecne",
+    "shelf_price": 29.90, "amount": 0.125, "unit": "kg", 
+    "current_price_per_unit": 239.20, "regular_price_per_unit": 279.20, "discount_percent": 14, "deal_score": 3
+  },
+  {
+    "id": "304", "name": "Máslo Madeta", "shop": "Coop", "category": "mlecne",
+    "shelf_price": 54.90, "amount": 0.25, "unit": "kg", 
+    "current_price_per_unit": 219.60, "regular_price_per_unit": 219.60, "discount_percent": 0, "deal_score": 0
+  },
+  {
+    "id": "305", "name": "Máslo Tradiční", "shop": "Flop", "category": "mlecne",
+    "shelf_price": 59.90, "amount": 0.25, "unit": "kg", 
+    "current_price_per_unit": 239.60, "regular_price_per_unit": 239.60, "discount_percent": 0, "deal_score": -2
+  },
+
+  {
+    "id": "401", "name": "Kuřecí prsa řízky XXL", "shop": "Lidl", "category": "maso",
+    "shelf_price": 149.00, "amount": 1.0, "unit": "kg", 
+    "current_price_per_unit": 149.00, "regular_price_per_unit": 189.00, "discount_percent": 21, "deal_score": 8
+  },
+  {
+    "id": "402", "name": "Kuřecí prsa tácek 500g", "shop": "Albert", "category": "maso",
+    "shelf_price": 89.90, "amount": 0.5, "unit": "kg", 
+    "current_price_per_unit": 179.80, "regular_price_per_unit": 219.80, "discount_percent": 18, "deal_score": 5
+  },
+  {
+    "id": "403", "name": "Kuřecí prsa pult", "shop": "Tesco", "category": "maso",
+    "shelf_price": 169.00, "amount": 1.0, "unit": "kg", 
+    "current_price_per_unit": 169.00, "regular_price_per_unit": 199.00, "discount_percent": 15, "deal_score": 4
+  },
+  {
+    "id": "404", "name": "Kuřecí prsa BIO", "shop": "Coop", "category": "maso",
+    "shelf_price": 149.50, "amount": 0.5, "unit": "kg", 
+    "current_price_per_unit": 299.00, "regular_price_per_unit": 299.00, "discount_percent": 0, "deal_score": 0
+  },
+  {
+    "id": "405", "name": "Kuřecí prsa Vodňanská", "shop": "Flop", "category": "maso",
+    "shelf_price": 189.00, "amount": 1.0, "unit": "kg", 
+    "current_price_per_unit": 189.00, "regular_price_per_unit": 189.00, "discount_percent": 0, "deal_score": -1
+  },
+
+  {
+    "id": "501", "name": "Tuňák steak (konzerva)", "shop": "Lidl", "category": "konzervy",
+    "shelf_price": 39.90, "amount": 0.08, "unit": "kg", 
+    "current_price_per_unit": 498.75, "regular_price_per_unit": 623.75, "discount_percent": 20, "deal_score": 6
+  },
+  {
+    "id": "502", "name": "Tuňák Franz Josef multipack 3x80g", "shop": "Albert", "category": "konzervy",
+    "shelf_price": 129.90, "amount": 0.24, "unit": "kg", 
+    "current_price_per_unit": 541.25, "regular_price_per_unit": 707.90, "discount_percent": 23, "deal_score": 7
+  },
+  {
+    "id": "503", "name": "Tuňák ve vlastní šťávě", "shop": "Tesco", "category": "konzervy",
+    "shelf_price": 29.90, "amount": 0.08, "unit": "kg", 
+    "current_price_per_unit": 373.75, "regular_price_per_unit": 561.25, "discount_percent": 33, "deal_score": 9
+  },
+  {
+    "id": "504", "name": "Tuňák Giana", "shop": "Coop", "category": "konzervy",
+    "shelf_price": 34.90, "amount": 0.08, "unit": "kg", 
+    "current_price_per_unit": 436.25, "regular_price_per_unit": 436.25, "discount_percent": 0, "deal_score": 0
+  },
+  {
+    "id": "505", "name": "Tuňák Calvo", "shop": "Flop", "category": "konzervy",
+    "shelf_price": 49.90, "amount": 0.08, "unit": "kg", 
+    "current_price_per_unit": 623.75, "regular_price_per_unit": 623.75, "discount_percent": 0, "deal_score": -3
+  }
+]

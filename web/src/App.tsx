@@ -1,14 +1,28 @@
-// 1. Musíme importovat tu tvoji komponentu (tvůj nákupní seznam)
-import HomePage from './pages/HomePage'
-import './App.css'
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Layout from './components/Layout';
+import NakupPage from './pages/Nakup/NakupPage';
+import OptimumPage from './pages/Optimum/OptimumPage';
+import FavoritePage from './pages/Favorite/FavoritePage';
+
+const SettingsPage = () => (
+  <div className="page-content">
+    <p>Verze: 1.0.0 TSX</p>
+  </div>
+);
 
 function App() {
   return (
-    // 2. Tady ji vykreslíme
-    <div className="app-container">
-      <HomePage />
-    </div>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<NakupPage />} />
+          <Route path="favorite" element={<FavoritePage />} />
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="optimum" element={<OptimumPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
