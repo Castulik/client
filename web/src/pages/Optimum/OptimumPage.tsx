@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { type VysledekObchodu, type VysledekHledani, type PolozkaKosiku } from '../../types/types'
-import { spocitatCenyProSeznam, najitNejlepsiProduktyGlobalne } from '../../utils/ceny'
+import { spocitatCenyProObchody, najitNejlepsiProduktyGlobalne } from '../../utils/ceny'
 import './OptimumPage.css'
 // Import nových komponent
 import { CartRecap } from './components/CartRecap'
@@ -32,7 +32,7 @@ export default function OptimumPage() {
     const spustitVypocty = () => {
         setLoading(true);
         setTimeout(() => {
-            const vysledkyObchodu = spocitatCenyProSeznam(kosik);
+            const vysledkyObchodu = spocitatCenyProObchody(kosik);
             setZebricekObchodu(vysledkyObchodu);
 
             const vysledkyProd = najitNejlepsiProduktyGlobalne(kosik);

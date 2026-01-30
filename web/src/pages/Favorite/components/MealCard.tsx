@@ -1,6 +1,6 @@
 import { ChevronRight, ShoppingCart } from 'lucide-react';
 import { type PolozkaKosiku } from '../../../types/types'; // Uprav cestu dle potřeby
-import { spocitatCenyProSeznam } from '../../../utils/ceny'; // Uprav cestu dle potřeby
+import { spocitatCenyProObchody } from '../../../utils/ceny'; // Uprav cestu dle potřeby
 
 interface UlozeneJidlo {
   id: string;
@@ -16,7 +16,7 @@ interface Props {
 
 export const MealCard = ({ jidlo, onBuy }: Props) => {
   // Výpočet proběhne pro každou kartu zvlášť
-  const vysledky = spocitatCenyProSeznam(jidlo.ingredience);
+  const vysledky = spocitatCenyProObchody(jidlo.ingredience);
   const top3Obchody = vysledky.slice(0, 3);
 
   return (

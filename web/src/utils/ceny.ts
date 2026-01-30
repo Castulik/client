@@ -13,7 +13,7 @@ const ROZSIRENE_HLEDANI: Record<string, string[]> = {
 };
 
 // 1. Funkce pro žebříček obchodů (Už jsme měli)
-export const spocitatCenyProSeznam = (seznamPolozek: PolozkaKosiku[]): VysledekObchodu[] => {
+export const spocitatCenyProObchody = (seznamPolozek: PolozkaKosiku[]): VysledekObchodu[] => {
   const unikatniObchody = Array.from(new Set((testovaciData as DbProdukt[]).map(p => p.shop)));
   const vysledky: VysledekObchodu[] = [];
 
