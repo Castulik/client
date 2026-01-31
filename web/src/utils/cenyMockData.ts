@@ -1,9 +1,11 @@
-// Smazali jsme import testovaciData!
+import testovaciData from '../pages/mock_data.json';
 import { BEZNE_CENY } from '../data/bezne_ceny';
 import { type DbProdukt, type PolozkaKosiku, type VysledekHledani, type VysledekObchodu, type DetailPolozky } from '../types/types';
 
-const normalize = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+// Pomocná funkce na malá písmena (pro porovnávání)
+const normalize = (str: string) => str.toLowerCase();
 
+// Slovník synonym stále dává smysl (v DB může být "Pilsner", i když uživatel zadal "Pivo")
 const ROZSIRENE_HLEDANI: Record<string, string[]> = {
   'pivo': ['pivo', 'pilsner', 'kozel', 'radegast', 'gambrinus', 'svijany', 'budvar'],
   'mléko': ['mléko', 'trvanlivé', 'čerstvé', 'plnotučné', 'polotučné'],
@@ -17,11 +19,8 @@ const ROZSIRENE_HLEDANI: Record<string, string[]> = {
   'mouka': ['mouka', 'hladká', 'polohrubá', 'hrubá']
 };
 
-// ZMĚNA: Přibyl druhý parametr 'databazeAkci'
-export const spocitatCenyProObchody = (seznamPolozek: PolozkaKosiku[], databazeAkci: DbProdukt[]): VysledekObchodu[] => {
-  
-  // Teď bereme obchody z reálných dat, ne z JSONu
-  const unikatniObchody = Array.from(new Set(databazeAkci.map(p => p.shop)));
+export const spocitatCenyProObchody = (seznamPolozek: PolozkaKosiku[]): VysledekObchodu[] => {
+  const unikatniObchody = Array.from(new Set((testovaciData as DbProdukt[]).map(p => p.shop)));
   const vysledky: VysledekObchodu[] = [];
 
   for (const obchod of unikatniObchody) {
@@ -31,33 +30,53 @@ export const spocitatCenyProObchody = (seznamPolozek: PolozkaKosiku[], databazeA
     const detail: DetailPolozky[] = [];
 
     for (const polozka of seznamPolozek) {
+      // 1. Příprava hledaných výrazů
       const hledanyNazev = normalize(polozka.nazev);
+      // Klíčová slova: buď synonyma, nebo slova z názvu (např. "Kuřecí prsa" -> ["kuřecí", "prsa"])
       const klicovaSlova = ROZSIRENE_HLEDANI[hledanyNazev] || hledanyNazev.split(' ');
       const hledaneStitky = polozka.vybraneStitky.map(s => normalize(s));
 
-      // --- 1. POKUS: Hledáme v REÁLNÝCH AKCÍCH ---
-      let kandidati = databazeAkci.filter(p => p.shop === obchod);
+      // --- 1. POKUS: Hledáme v AKCÍCH (Smart Scoring) ---
       
+      // Filtrujeme produkty daného obchodu
+      let kandidati = (testovaciData as DbProdukt[]).filter(p => p.shop === obchod);
+      
+      // A) Základní filtr: Produkt musí obsahovat alespoň část názvu (klíčové slovo)
       kandidati = kandidati.filter(p => {
         const jmenoProduktu = normalize(p.name);
         return klicovaSlova.some(slovo => jmenoProduktu.includes(slovo));
       });
 
       if (kandidati.length > 0) {
-        // SKÓROVÁNÍ
+        // B) SKÓROVÁNÍ (Tady se děje to kouzlo se štítky)
         const obodovaniKandidati = kandidati.map(p => {
             let skore = 0;
             const jmenoProduktu = normalize(p.name);
-            hledaneStitky.forEach(stitek => { if (jmenoProduktu.includes(stitek)) skore += 100; });
-            klicovaSlova.forEach(slovo => { if (jmenoProduktu.includes(slovo)) skore += 1; });
+
+            // Pravidlo 1: Bonus za shodu štítku (např. "3vrstvý")
+            hledaneStitky.forEach(stitek => {
+                if (jmenoProduktu.includes(stitek)) {
+                    skore += 100; // Velký bonus! Trefili jsme specifikaci.
+                }
+            });
+
+            // Pravidlo 2: Malý bonus za shodu více klíčových slov (přesnější název)
+            klicovaSlova.forEach(slovo => {
+                if (jmenoProduktu.includes(slovo)) skore += 1;
+            });
+
             return { produkt: p, skore };
         });
 
+        // C) ŘAZENÍ
+        // 1. Podle skóre (sestupně) - kdo má víc štítků, vyhrává
+        // 2. Podle ceny (vzestupně) - když je skóre stejné, bereme levnější
         obodovaniKandidati.sort((a, b) => {
             if (a.skore !== b.skore) return b.skore - a.skore;
             return a.produkt.shelf_price - b.produkt.shelf_price;
         });
 
+        // Vítěz je ten nahoře
         const vitez = obodovaniKandidati[0].produkt;
         const cenaCelkem = vitez.shelf_price * polozka.pocet;
 
@@ -74,8 +93,11 @@ export const spocitatCenyProObchody = (seznamPolozek: PolozkaKosiku[], databazeA
         });
 
       } else {
-        // --- 2. POKUS: BĚŽNÉ CENY ---
+        // --- 2. POKUS: BĚŽNÉ CENY (Fallback) ---
+        // Pokud nenajdeme akci, použijeme "záchranný ceník"
         let beznaCenaKus = BEZNE_CENY[hledanyNazev];
+        
+        // Zkusíme najít cenu i pro klíčové slovo (např. hledám "Vejce M", ceník má "vejce")
         if (!beznaCenaKus) {
              const klic = klicovaSlova.find(k => BEZNE_CENY[k]);
              if (klic) beznaCenaKus = BEZNE_CENY[klic];
@@ -93,7 +115,7 @@ export const spocitatCenyProObchody = (seznamPolozek: PolozkaKosiku[], databazeA
             celkemZaPolozku: cenaCelkem,
             produktVDB: { 
                 id: 'standard', 
-                name: `${polozka.nazev} ${polozka.vybraneStitky.join(' ')} (běžná cena)`, 
+                name: `${polozka.nazev} ${polozka.vybraneStitky.join(' ')} (běžná cena)`, // Do názvu dáme i štítky
                 shop: obchod, 
                 shelf_price: beznaCenaKus, 
                 current_price_per_unit: beznaCenaKus, 
@@ -106,9 +128,11 @@ export const spocitatCenyProObchody = (seznamPolozek: PolozkaKosiku[], databazeA
             },
             typCeny: 'standard'
           });
+
         } else {
+          // 3. NENAŠLI JSME NIC
           chybi.push(polozka.nazev);
-          suma += 1; 
+          suma += 1000; // Penalizace
         }
       }
     }
@@ -122,6 +146,7 @@ export const spocitatCenyProObchody = (seznamPolozek: PolozkaKosiku[], databazeA
     });
   }
 
+  // Seřazení obchodů: Nejdřív podle počtu chybějících, pak podle ceny
   vysledky.sort((a, b) => {
       const chybiA = a.chybejiciPolozky.length;
       const chybiB = b.chybejiciPolozky.length;
@@ -132,8 +157,8 @@ export const spocitatCenyProObchody = (seznamPolozek: PolozkaKosiku[], databazeA
   return vysledky;
 };
 
-// ZMĚNA: I tady přidáváme parametr databazeAkci
-export const najitNejlepsiProduktyGlobalne = (seznamPolozek: PolozkaKosiku[], databazeAkci: DbProdukt[]): VysledekHledani[] => {
+// Funkce pro globální hledání (také vylepšená o skóre)
+export const najitNejlepsiProduktyGlobalne = (seznamPolozek: PolozkaKosiku[]): VysledekHledani[] => {
     const nalezeneCeny: VysledekHledani[] = [];
 
     for (const polozka of seznamPolozek) {
@@ -141,19 +166,23 @@ export const najitNejlepsiProduktyGlobalne = (seznamPolozek: PolozkaKosiku[], da
         const klicovaSlova = ROZSIRENE_HLEDANI[hledanyNazev] || hledanyNazev.split(' ');
         const hledaneStitky = polozka.vybraneStitky.map(s => normalize(s));
 
-        // Hledáme v předaných datech
-        let kandidati = databazeAkci.filter(p => {
+        // 1. Filtrujeme
+        let kandidati = (testovaciData as DbProdukt[]).filter(p => {
              const jmeno = normalize(p.name);
              return klicovaSlova.some(slovo => jmeno.includes(slovo));
         });
 
+        // 2. Skórujeme
         const obodovani = kandidati.map(p => {
              let skore = 0;
              const jmeno = normalize(p.name);
-             hledaneStitky.forEach(stitek => { if (jmeno.includes(stitek)) skore += 100; });
+             hledaneStitky.forEach(stitek => {
+                 if (jmeno.includes(stitek)) skore += 100;
+             });
              return { p, skore };
         });
 
+        // 3. Řadíme (Skóre > Jednotková cena)
         obodovani.sort((a, b) => {
             if (a.skore !== b.skore) return b.skore - a.skore;
             return a.p.current_price_per_unit - b.p.current_price_per_unit;

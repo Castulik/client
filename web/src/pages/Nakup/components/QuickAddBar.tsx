@@ -17,7 +17,7 @@ export const QuickAddBar = ({ produkty, onSelect }: Props) => {
         {produkty.map(prod => (
           <button 
             key={prod.id} 
-            className="snap-start shrink-0 flex flex-col items-center justify-center min-w-[80px] h-[80px] bg-white border border-gray-100 rounded-2xl shadow-sm active:scale-95 active:bg-gray-50 transition-all" 
+            className="snap-start shrink-0 flex flex-col items-center justify-center min-w-20 h-20 bg-white border border-gray-100 rounded-2xl shadow-sm active:scale-95 active:bg-gray-50 transition-all" 
             onClick={() => onSelect(prod)}
           >
             <span className="text-2xl mb-1 filter drop-shadow-sm">{prod.icon}</span>
