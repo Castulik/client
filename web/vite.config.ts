@@ -1,11 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa' // <-- 1. Importovat toto
+import tailwindcss from '@tailwindcss/vite' // <--- 1. Import
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
+    tailwindcss(),
     // 2. Přidat celou tuto sekci VitePWA
     VitePWA({ 
       registerType: 'autoUpdate',

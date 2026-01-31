@@ -47,7 +47,7 @@ export const spocitatCenyProObchody = (seznamPolozek: PolozkaKosiku[]): Vysledek
         });
       } else {
         chybi.push(polozka.nazev);
-        suma += 1000; // Penalizace
+        suma += 1000; // Penalizace 
       }
     }
 
