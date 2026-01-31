@@ -1,5 +1,0 @@
-npm install @supabase/supabase-js
-
-npm install react-router-dom lucide-react
-
-npm install -D tailwindcss postcss autoprefixer
