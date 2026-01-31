@@ -12,13 +12,27 @@ export default function NakupPage() {
   const navigate = useNavigate();
 
   // --- STAVY (LOGIKA) ---
-  const [kosik, setKosik] = useState<PolozkaKosiku[]>([
-    { id: 'test-1', nazev: 'Pivo', pocet: 10, jednotka: 'ks', vybraneStitky: [] },
-    { id: 'test-2', nazev: 'Máslo', pocet: 2, jednotka: 'ks', vybraneStitky: [] },
-    { id: 'test-3', nazev: 'Mléko', pocet: 4, jednotka: 'l', vybraneStitky: ['Trvanlivé'] },
-    { id: 'test-4', nazev: 'Kuřecí prsa', pocet: 1, jednotka: 'kg', vybraneStitky: [] },
-    { id: 'test-5', nazev: 'Tuňák', pocet: 3, jednotka: 'ks', vybraneStitky: [] }
-  ])
+
+  // 1. ZMĚNA: Inicializace košíku z LocalStorage
+  const [kosik, setKosik] = useState<PolozkaKosiku[]>(() => {
+    // Pokusíme se načíst data z prohlížeče
+    const ulozenaData = localStorage.getItem('nakupni_kosik');
+    if (ulozenaData) {
+      try {
+        return JSON.parse(ulozenaData);
+      } catch (e) {
+        console.error("Chyba při čtení košíku", e);
+        return [];
+      }
+    }
+    // Pokud nic nemáme, vrátíme prázdné pole (už žádná testovací data)
+    return [];
+  });
+
+  // 2. ZMĚNA: Automatické ukládání při každé změně
+  useEffect(() => {
+    localStorage.setItem('nakupni_kosik', JSON.stringify(kosik));
+  }, [kosik]); // Spustí se vždy, když se změní 'kosik'
 
   const [databazePotravin, setDatabazePotravin] = useState<ProduktDefinice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,10 +41,7 @@ export default function NakupPage() {
   useEffect(() => {
     const fetchProdukty = async () => {
       setIsLoading(true);
-
-      const { data, error } = await supabase
-        .from('global_products')
-        .select('*');
+      const { data, error } = await supabase.from('global_products').select('*');
 
       if (error) {
         console.error('Chyba při načítání:', error);
@@ -43,12 +54,10 @@ export default function NakupPage() {
           mozneJednotky: item.mozne_jednotky,
           stitky: item.stitky || []
         }));
-
         setDatabazePotravin(mappedData);
       }
       setIsLoading(false);
     };
-
     fetchProdukty();
   }, []);
 
@@ -61,6 +70,8 @@ export default function NakupPage() {
   const [pocet, setPocet] = useState(1)
   const [jednotka, setJednotka] = useState('ks')
   const [aktivniStitky, setAktivniStitky] = useState<string[]>([])
+
+  const [upravovaneId, setUpravovaneId] = useState<string | null>(null);
 
   // --- EFEKTY ---
   useEffect(() => {
@@ -92,10 +103,34 @@ export default function NakupPage() {
       vychoziJednotka: 'ks',
       mozneJednotky: ['ks', 'kg', 'l', 'g', 'balení']
     };
-
     setVybranyProdukt(novyProdukt);
     setnaseptavacProdukty([]);
     setJednotka('ks');
+  }
+
+  const editovatPolozku = (polozka: PolozkaKosiku) => {
+    setUpravovaneId(polozka.id);
+    const definice = databazePotravin.find(p => p.nazev === polozka.nazev);
+
+    if (definice) {
+      setVybranyProdukt(definice);
+    } else {
+      setVybranyProdukt({
+        id: 'custom-item',
+        nazev: polozka.nazev,
+        icon: '✏️',
+        vychoziJednotka: polozka.jednotka,
+        mozneJednotky: ['ks', 'kg', 'l', 'g', 'balení'],
+        stitky: []
+      });
+    }
+
+    setVstup(polozka.nazev);
+    setPocet(polozka.pocet);
+    setJednotka(polozka.jednotka);
+    setAktivniStitky(polozka.vybraneStitky);
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   const toggleStitek = (stitek: string) => {
@@ -109,44 +144,59 @@ export default function NakupPage() {
   const pridatDoKosiku = async () => {
     if (!vybranyProdukt) return;
 
-    if (vybranyProdukt.id === 'custom-item') {
-      supabase.from('user_suggestions').insert([
-        { nazev: vybranyProdukt.nazev }
-      ]).then(() => console.log('Odesláno do návrhů'));
+    if (vybranyProdukt.id === 'custom-item' && !upravovaneId) {
+      supabase.from('user_suggestions').insert([{ nazev: vybranyProdukt.nazev }])
+        .then(() => console.log('Odesláno do návrhů'));
     }
 
-    const novaPolozka: PolozkaKosiku = {
-      id: crypto.randomUUID(),
-      nazev: vybranyProdukt.nazev,
-      pocet: pocet,
-      jednotka: jednotka,
-      vybraneStitky: aktivniStitky
-    };
+    if (upravovaneId) {
+      setKosik(kosik.map(p => p.id === upravovaneId ? {
+        ...p,
+        pocet: pocet,
+        jednotka: jednotka,
+        vybraneStitky: aktivniStitky
+      } : p));
+    }
+    else {
+      const novaPolozka: PolozkaKosiku = {
+        id: crypto.randomUUID(),
+        nazev: vybranyProdukt.nazev,
+        pocet: pocet,
+        jednotka: jednotka,
+        vybraneStitky: aktivniStitky
+      };
+      setKosik([...kosik, novaPolozka]);
+    }
 
-    setKosik([...kosik, novaPolozka]);
     ResetFormulare();
   }
 
   const ResetFormulare = () => {
-    setVstup(''); setVybranyProdukt(null); setAktivniStitky([]); setPocet(1); setJednotka('ks');
+    setVstup('');
+    setVybranyProdukt(null);
+    setAktivniStitky([]);
+    setPocet(1);
+    setJednotka('ks');
+    setUpravovaneId(null);
   }
 
-  const smazPolozku = (id: string) => setKosik(kosik.filter(p => p.id !== id))
+  const smazPolozku = (id: string) => {
+    setKosik(kosik.filter(p => p.id !== id));
+    if (upravovaneId === id) ResetFormulare();
+  }
 
   const jitNaVysledky = () => navigate('/optimum', { state: { kosik: kosik } })
 
 
   // --- VZHLED (RENDER) ---
   return (
-    <div className="pb-32"> {/* Extra padding dole, aby tlačítko nepřekrylo poslední item */}
-
+    <div className="pb-32">
       {isLoading && (
         <div className="flex justify-center p-4">
           <span className="text-gray-400 text-sm animate-pulse">Načítám databázi potravin...</span>
         </div>
       )}
 
-      {/* 1. Komponenta Formuláře */}
       <ProductForm
         vstup={vstup}
         setVstup={setVstup}
@@ -162,39 +212,37 @@ export default function NakupPage() {
         toggleStitek={toggleStitek}
         onConfirm={pridatDoKosiku}
         onCancel={ResetFormulare}
+        submitLabel={upravovaneId ? '💾 Uložit změny' : undefined}
       />
 
-      {/* Rychlá volba */}
-      {!isLoading && databazePotravin.length > 0 && (
+      {!isLoading && databazePotravin.length > 0 && !upravovaneId && (
         <QuickAddBar
           produkty={databazePotravin.slice(0, 8)}
           onSelect={vyberProdukt}
         />
       )}
 
-      {/* 3. Komponenta Seznamu */}
       <div className="mb-4">
         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">
-            V košíku ({kosik.length})
+          V košíku ({kosik.length})
         </h3>
         <ShoppingList
-            items={kosik}
-            onDelete={smazPolozku}
+          items={kosik}
+          onDelete={smazPolozku}
+          onEdit={editovatPolozku}
         />
       </div>
 
-      {/* Tlačítko akce - FIXNÍ DOLE */}
       {kosik.length > 0 && (
         <div className="fixed bottom-20 left-4 right-4 z-40">
-          <button 
-            className="w-full bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-xl shadow-emerald-500/30 flex items-center justify-center gap-2 active:scale-95 transition-transform" 
+          <button
+            className="w-full bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-xl shadow-emerald-500/30 flex items-center justify-center gap-2 active:scale-95 transition-transform"
             onClick={jitNaVysledky}
           >
             <span>🚀 Přejít k hledání cen</span>
           </button>
         </div>
       )}
-
     </div>
   )
 }

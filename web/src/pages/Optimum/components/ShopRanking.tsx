@@ -19,8 +19,8 @@ export const ShopRanking = ({ results, totalItemsCount, expandedIndex, onToggle 
           <div key={index}
             onClick={() => onToggle(index)}
             className={`cursor-pointer rounded-2xl transition-all duration-200 border
-              ${isWinner 
-                ? 'bg-emerald-50 border-emerald-400 shadow-md shadow-emerald-100' 
+              ${isWinner
+                ? 'bg-emerald-50 border-emerald-400 shadow-md shadow-emerald-100'
                 : 'bg-white border-gray-100 shadow-sm hover:border-gray-200'
               }`}
           >
@@ -30,9 +30,9 @@ export const ShopRanking = ({ results, totalItemsCount, expandedIndex, onToggle 
               <div className="flex gap-3 items-center">
                 {/* Ikona trofeje pro vítěze, jinak šipka */}
                 <div className={`flex items-center justify-center w-8 h-8 rounded-full ${isWinner ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-50 text-gray-400'}`}>
-                    {isWinner ? <Trophy size={16} /> : (isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />)}
+                  {isWinner ? <Trophy size={16} /> : (isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />)}
                 </div>
-                
+
                 <div>
                   <h3 className={`font-bold text-lg leading-none ${isWinner ? 'text-emerald-900' : 'text-gray-800'}`}>
                     {obchod.nazevObchodu}
@@ -57,28 +57,33 @@ export const ShopRanking = ({ results, totalItemsCount, expandedIndex, onToggle 
                   <span>Položka</span>
                   <span>Cena</span>
                 </div>
-                
+
                 <div className="space-y-2">
-                    {obchod.detailNakupu.map((polozka, i) => (
+                  {obchod.detailNakupu.map((polozka, i) => (
                     <div key={i} className="flex justify-between items-start text-sm">
-                        <div className="flex flex-col">
-                            <span className="font-semibold text-gray-700">
-                                {polozka.pocet}x {polozka.nazevZbozi}
-                            </span>
-                            <span className="text-[10px] text-gray-400">
-                                ({polozka.produktVDB.name})
-                            </span>
-                        </div>
-                        <div className="font-mono font-medium text-gray-600 whitespace-nowrap ml-4">
-                            {polozka.celkemZaPolozku.toFixed(2)} Kč
-                        </div>
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-gray-700">
+                          {polozka.pocet}x {polozka.nazevZbozi}
+                        </span>
+                        <span className="text-[10px] text-gray-400">
+                          ({polozka.produktVDB.name})
+                        </span>
+                      </div>
+                      {polozka.produktVDB.discount_percent > 0 && (
+                        <span className="ml-auto text-[10px] font-bold text-white bg-red-500 px-1.5 py-0.5 rounded-full">
+                          -{polozka.produktVDB.discount_percent}%
+                        </span>
+                      )}
+                      <div className="font-mono font-medium text-gray-600 whitespace-nowrap ml-4">
+                        {polozka.celkemZaPolozku.toFixed(2)} Kč
+                      </div>
                     </div>
-                    ))}
+                  ))}
                 </div>
 
                 {obchod.chybejiciPolozky.length > 0 && (
                   <div className="mt-4 bg-red-50 text-red-600 p-3 rounded-lg text-xs border border-red-100">
-                    <strong className="block mb-1 uppercase text-[10px]">Nenašli jsme:</strong> 
+                    <strong className="block mb-1 uppercase text-[10px]">Nenašli jsme:</strong>
                     {obchod.chybejiciPolozky.join(', ')}
                   </div>
                 )}

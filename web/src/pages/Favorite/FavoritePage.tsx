@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
-import { type PolozkaKosiku } from '../../types/types'; 
+import { type PolozkaKosiku, type DbProdukt } from '../../types/types'; 
 import { MealCard } from './components/MealCard';
+import { supabase } from '../supabaseClient'; // Potřebujeme Supabase
 
-// Poznámka: Interface klidně nech zde, pokud ho nepoužíváš jinde
 interface UlozeneJidlo {
   id: string;
   nazev: string;
@@ -15,7 +15,36 @@ interface UlozeneJidlo {
 export default function FavoritesPage() {
   const navigate = useNavigate();
 
-  // MOCK DATA (Zatím beze změny)
+  // STAV PRO DATA Z DATABÁZE (CENY)
+  const [dbData, setDbData] = useState<DbProdukt[]>([]);
+
+  // EFEKT: Stáhnout aktuální letáky při načtení stránky
+  useEffect(() => {
+    const fetchSlevy = async () => {
+        const { data, error } = await supabase.from('products').select('*');
+        
+        if (!error && data) {
+            // Mapping (stejný jako v OptimumPage - důležité pro čísla!)
+            const mappedData: DbProdukt[] = data.map((row: any) => ({
+                id: String(row.id),
+                name: row.name,
+                shop: row.shop,
+                category: row.category || 'Neurčeno',
+                shelf_price: parseFloat(row.current_price_per_unit) || 0,
+                current_price_per_unit: parseFloat(row.current_price_per_unit) || 0,
+                regular_price_per_unit: parseFloat(row.regular_price_per_unit) || 0,
+                discount_percent: Math.abs(parseFloat(row.discount_percent)) || 0,
+                deal_score: row.deal_score || 0,
+                amount: 1, 
+                unit: 'ks'
+            }));
+            setDbData(mappedData);
+        }
+    };
+    fetchSlevy();
+  }, []);
+
+  // MOCK DATA RECEPTŮ
   const [mojeJidla] = useState<UlozeneJidlo[]>([
     {
       id: 'j1',
@@ -45,7 +74,7 @@ export default function FavoritesPage() {
   };
 
   return (
-    <div className="pb-10"> {/* Padding bottom aby obsah nekončil hned u lišty */}
+    <div className="pb-24">
       
       {/* Hlavička */}
       <div className="flex justify-between items-center mb-6 mt-2">
@@ -63,6 +92,7 @@ export default function FavoritesPage() {
           <MealCard 
             key={jidlo.id} 
             jidlo={jidlo} 
+            dbData={dbData} // <--- Tady posíláme stažená data dolů
             onBuy={koupitJidlo} 
           />
         ))}

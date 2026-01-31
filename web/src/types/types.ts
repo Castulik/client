@@ -29,6 +29,7 @@ export interface DetailPolozky {
     pocet: number;
     celkemZaPolozku: number;
     produktVDB: DbProdukt; // Znovužití jiného typu
+    typCeny?: 'akce' | 'standard'; // <--- NOVÉ
 }
 
 export interface VysledekObchodu {
