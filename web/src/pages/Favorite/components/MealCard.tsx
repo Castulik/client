@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { ChevronRight, ShoppingCart } from 'lucide-react';
-import { type PolozkaKosiku } from '../../../types/types'; // Uprav cestu dle potřeby
-import { spocitatCenyProObchody } from '../../../utils/ceny'; // Uprav cestu dle potřeby
+import { type PolozkaKosiku } from '../../../types/types'; 
+import { spocitatCenyProObchody } from '../../../utils/ceny';
 
 interface UlozeneJidlo {
   id: string;
@@ -15,37 +16,60 @@ interface Props {
 }
 
 export const MealCard = ({ jidlo, onBuy }: Props) => {
-  // Výpočet proběhne pro každou kartu zvlášť
-  const vysledky = spocitatCenyProObchody(jidlo.ingredience);
-  const top3Obchody = vysledky.slice(0, 3);
+  // Optimalizace: Výpočet ceny se provede jen když se změní ingredience
+  const top3Obchody = useMemo(() => {
+    const vysledky = spocitatCenyProObchody(jidlo.ingredience);
+    return vysledky.slice(0, 3);
+  }, [jidlo.ingredience]);
 
   return (
-    <div className="meal-card">
+    <div className="bg-white rounded-2xl p-4 mb-5 shadow-sm border border-gray-100">
       
       {/* Horní část: Název a ingredience */}
-      <div className="meal-info">
-        <div className="meal-icon">{jidlo.emoji}</div>
+      <div className="flex gap-4 items-start mb-4">
+        {/* Ikona */}
+        <div className="text-3xl bg-gray-100 w-12 h-12 flex items-center justify-center rounded-xl shrink-0">
+          {jidlo.emoji}
+        </div>
+        
+        {/* Texty */}
         <div>
-          <h3 className="meal-title">{jidlo.nazev}</h3>
-          <p className="meal-ingredients">
+          <h3 className="text-lg font-semibold mb-1 text-gray-800 leading-none">
+            {jidlo.nazev}
+          </h3>
+          <p className="text-sm text-gray-500 leading-snug">
             {jidlo.ingredience.map(i => i.nazev).join(', ')}
           </p>
         </div>
       </div>
 
-      <div className="divider"></div>
+      {/* Divider (vytažený do krajů pomocí negativního marginu) */}
+      <div className="h-px bg-gray-100 -mx-4 mb-4"></div>
 
       {/* Dolní část: 3 Nejlepší ceny */}
-      <div className="price-comparison">
-        <span className="price-label">TOP Ceny dnes:</span>
+      <div className="mb-4">
+        <span className="block text-[10px] uppercase font-bold text-gray-400 mb-2 tracking-wide">
+          TOP Ceny dnes:
+        </span>
         
-        <div className="shops-row">
+        <div className="flex gap-2">
           {top3Obchody.map((obchod, index) => {
             const isWinner = index === 0;
             return (
-              <div key={obchod.nazevObchodu} className={`mini-shop-price ${isWinner ? 'winner' : ''}`}>
-                 <span className="shop-name">{obchod.nazevObchodu}</span>
-                 <span className="shop-val">{obchod.celkovaCena.toFixed(0)} Kč</span>
+              <div 
+                key={obchod.nazevObchodu} 
+                className={`flex-1 border rounded-lg py-2 px-1 flex flex-col items-center justify-center transition-colors
+                  ${isWinner 
+                    ? 'bg-green-50 border-green-400 text-green-800' 
+                    : 'bg-gray-50 border-gray-200 text-gray-600'
+                  }`}
+              >
+                 <span className="text-[10px] uppercase font-bold mb-0.5">
+                    {obchod.nazevObchodu}
+                 </span>
+                 <span className={`text-sm font-extrabold ${isWinner ? 'text-green-700' : 'text-gray-800'}`}>
+                    {obchod.celkovaCena.toFixed(0)} Kč
+                 </span>
               </div>
             )
           })}
@@ -53,10 +77,15 @@ export const MealCard = ({ jidlo, onBuy }: Props) => {
       </div>
 
       {/* Tlačítko akce */}
-      <button className="buy-meal-btn" onClick={() => onBuy(jidlo)}>
-        <ShoppingCart size={16} style={{marginRight: 6}}/>
-        Koupit tento recept
-        <ChevronRight size={16} style={{marginLeft: 'auto'}}/>
+      <button 
+        className="w-full bg-white border border-gray-200 p-3 rounded-xl text-gray-800 font-semibold flex items-center justify-between hover:bg-gray-50 active:scale-[0.98] transition-all" 
+        onClick={() => onBuy(jidlo)}
+      >
+        <div className="flex items-center gap-2">
+            <ShoppingCart size={18} className="text-primary"/>
+            <span>Koupit tento recept</span>
+        </div>
+        <ChevronRight size={18} className="text-gray-400"/>
       </button>
 
     </div>

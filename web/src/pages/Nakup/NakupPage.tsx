@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import './NakupPage.css'
 import { type ProduktDefinice, type PolozkaKosiku } from '../../types/types'
-import { supabase } from '../supabaseClient' // Import klienta
+import { supabase } from '../supabaseClient'
 
-// Import nových komponent
+// Import komponent
 import { QuickAddBar } from './components/QuickAddBar'
 import { ShoppingList } from './components/ShoppingList'
 import { ProductForm } from './components/ProductForm'
@@ -21,11 +20,10 @@ export default function NakupPage() {
     { id: 'test-5', nazev: 'Tuňák', pocet: 3, jednotka: 'ks', vybraneStitky: [] }
   ])
 
-  // Tady už není hardcoded pole, ale stav, který se naplní z DB
   const [databazePotravin, setDatabazePotravin] = useState<ProduktDefinice[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // Načítání
+  const [isLoading, setIsLoading] = useState(true);
 
-  // --- EFEKT 1: NAČTENÍ DAT ZE SUPABASE ---
+  // --- EFEKT: NAČTENÍ DAT ZE SUPABASE ---
   useEffect(() => {
     const fetchProdukty = async () => {
       setIsLoading(true);
@@ -37,13 +35,12 @@ export default function NakupPage() {
       if (error) {
         console.error('Chyba při načítání:', error);
       } else if (data) {
-        // Musíme namapovat snake_case z DB na camelCase v TypeScriptu
         const mappedData: ProduktDefinice[] = data.map((item: any) => ({
           id: item.id,
           nazev: item.nazev,
           icon: item.icon,
-          vychoziJednotka: item.vychozi_jednotka, // Pozor na podtržítko
-          mozneJednotky: item.mozne_jednotky,     // Pozor na podtržítko
+          vychoziJednotka: item.vychozi_jednotka,
+          mozneJednotky: item.mozne_jednotky,
           stitky: item.stitky || []
         }));
 
@@ -66,11 +63,10 @@ export default function NakupPage() {
   const [aktivniStitky, setAktivniStitky] = useState<string[]>([])
 
   // --- EFEKTY ---
-  // tato funkce se zapne pokazde kdykoliv se neco zmeni v promenne vstup
   useEffect(() => {
     if (vstup.trim() === '') {
       setnaseptavacProdukty([])
-      if (!vybranyProdukt) return // Jen pokud nic nevybráno
+      if (!vybranyProdukt) return
     }
     const nalezene = databazePotravin.filter(p =>
       p.nazev.toLowerCase().includes(vstup.toLowerCase())
@@ -79,7 +75,6 @@ export default function NakupPage() {
   }, [vstup, databazePotravin])
 
   // --- FUNKCE ---
-  // vyberu item z naseptavace a tedy inicializuji vybrany produkt
   const vyberProdukt = (produkt: ProduktDefinice) => {
     setVybranyProdukt(produkt)
     setVstup(produkt.nazev)
@@ -89,47 +84,32 @@ export default function NakupPage() {
     setnaseptavacProdukty([])
   }
 
-  // 2. NOVÉ: Uživatel klikl na "Vytvořit vlastní"
   const vyberVlastni = () => {
-    // Vytvoříme dočasný objekt produktu z toho, co uživatel napsal
     const novyProdukt: ProduktDefinice = {
-      id: 'custom-item',        // Speciální ID
-      nazev: vstup,             // Název vezmeme z inputu
-      icon: '🛒',               // Dáme mu obecnou ikonku
+      id: 'custom-item',
+      nazev: vstup,
+      icon: '🛒',
       vychoziJednotka: 'ks',
-      mozneJednotky: ['ks', 'kg', 'l', 'g', 'balení'] // Nabídneme všechny jednotky
+      mozneJednotky: ['ks', 'kg', 'l', 'g', 'balení']
     };
 
-    // Tímto říkáme: "Máme vybráno!" -> Otevře se formulář a zavře se našeptávač
     setVybranyProdukt(novyProdukt);
-
     setnaseptavacProdukty([]);
     setJednotka('ks');
   }
 
   const toggleStitek = (stitek: string) => {
-    // 1. KROK: Ptáme se "Už ten štítek máme?"
     if (aktivniStitky.includes(stitek)) {
-
-      // SCÉNÁŘ A: ANO, už tam je -> Musíme ho VYHODIT (Odebrat)
-      // .filter vytvoří nové pole, kde nechá všechno KROMĚ toho aktuálního štítku
       setAktivniStitky(aktivniStitky.filter(s => s !== stitek))
-
     } else {
-
-      // SCÉNÁŘ B: NE, není tam -> Musíme ho PŘIDAT
-      // Vezmeme staré štítky (...aktivniStitky) a přidáme k nim ten nový
       setAktivniStitky([...aktivniStitky, stitek])
     }
   }
 
-  // 3. Odeslání do košíku (OPRAVENO)
   const pridatDoKosiku = async () => {
     if (!vybranyProdukt) return;
 
-    // A) Pokud je to vlastní produkt -> Pošleme to do Supabase (fire & forget)
     if (vybranyProdukt.id === 'custom-item') {
-      // Nemusíme čekat na await, ať to nezdržuje UI
       supabase.from('user_suggestions').insert([
         { nazev: vybranyProdukt.nazev }
       ]).then(() => console.log('Odesláno do návrhů'));
@@ -158,10 +138,13 @@ export default function NakupPage() {
 
   // --- VZHLED (RENDER) ---
   return (
-    <div className="home-container">
+    <div className="pb-32"> {/* Extra padding dole, aby tlačítko nepřekrylo poslední item */}
 
-      {/* Můžeš přidat loading stav */}
-      {isLoading && <p style={{ textAlign: 'center' }}>Načítám databázi potravin...</p>}
+      {isLoading && (
+        <div className="flex justify-center p-4">
+          <span className="text-gray-400 text-sm animate-pulse">Načítám databázi potravin...</span>
+        </div>
+      )}
 
       {/* 1. Komponenta Formuláře */}
       <ProductForm
@@ -181,25 +164,33 @@ export default function NakupPage() {
         onCancel={ResetFormulare}
       />
 
-      {/* Rychlá volba - zobrazíme prvních 5 z DB */}
+      {/* Rychlá volba */}
       {!isLoading && databazePotravin.length > 0 && (
         <QuickAddBar
-          produkty={databazePotravin.slice(0, 8)} // Vezmeme dynamicky prvních 5
+          produkty={databazePotravin.slice(0, 8)}
           onSelect={vyberProdukt}
         />
       )}
 
       {/* 3. Komponenta Seznamu */}
-      <ShoppingList
-        items={kosik}
-        onDelete={smazPolozku}
-      />
+      <div className="mb-4">
+        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">
+            V košíku ({kosik.length})
+        </h3>
+        <ShoppingList
+            items={kosik}
+            onDelete={smazPolozku}
+        />
+      </div>
 
-      {/* Tlačítko akce */}
+      {/* Tlačítko akce - FIXNÍ DOLE */}
       {kosik.length > 0 && (
-        <div style={{ marginTop: 20 }}>
-          <button className="optimize-btn" onClick={jitNaVysledky}>
-            🚀 Přejít k hledání cen
+        <div className="fixed bottom-20 left-4 right-4 z-40">
+          <button 
+            className="w-full bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-xl shadow-emerald-500/30 flex items-center justify-center gap-2 active:scale-95 transition-transform" 
+            onClick={jitNaVysledky}
+          >
+            <span>🚀 Přejít k hledání cen</span>
           </button>
         </div>
       )}

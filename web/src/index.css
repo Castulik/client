@@ -1,186 +1,24 @@
-/* =========================================
-   1. ZÁKLADNÍ NASTAVENÍ A PROMĚNNÉ
-   ========================================= */
-:root {
-  /* Rozměry lišt - změň zde a projeví se všude */
-  --header-height: 60px;
-  --bottom-nav-height: 60px;
+/* Importuje samotný Tailwind */
+@import "tailwindcss";
+
+/* Tady definujeme naše proměnné (nahrazuje tailwind.config.js) */
+@theme {
+  --color-primary: #2563eb;
+  --color-bg: #f4f4f5;
+  --color-surface: rgba(255, 255, 255, 0.85);
   
-  /* Barvy */
-  --primary-color: #2563eb;    /* Modrá */
-  --bg-color: #f4f4f5;         /* Světle šedé pozadí */
-  --surface-color: rgba(255, 255, 255, 0.85); /* Průhledná bílá */
-  --text-main: #1f2937;
-  --text-muted: #64748b;
-  
-  font-family: system-ui, -apple-system, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  
-  /* Plynulé písmo na mobilech */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-tap-highlight-color: transparent; /* Zruší modré bliknutí při kliku na Androidu */
+  /* Můžeš přidat i vlastní fonty nebo breakpointy, pokud bude třeba */
 }
 
-/* Reset a základní layout */
-* {
-  box-sizing: border-box; /* Klíčové pro správné počítání šířky */
-}
-
+/* Naše globální styly */
 body {
-  margin: 0;
-  padding: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  background-color: var(--bg-color);
-  color: var(--text-main);
-  overscroll-behavior-y: none; /* Zabrání "pružinovému" efektu celé stránky na iOS */
+  /* Používáme proměnné definované výše */
+  background-color: var(--color-bg);
+  color: #1f2937; /* gray-800 */
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
 }
 
-.app-container {
-  width: 100%;
-  min-height: 100vh;
-  position: relative;
-}
-
-/* =========================================
-   2. SPOLEČNÉ STYLY PRO LIŠTY (Glassmorphism)
-   ========================================= */
-.top-bar,
-.bottom-nav {
-  position: fixed;
-  left: 0;
-  right: 0; /* Místo width: 100% je bezpečnější left:0 + right:0 */
-  z-index: 1000;
-  
-  background: var(--surface-color);
-  backdrop-filter: blur(12px);         /* Rozmazání pozadí */
-  -webkit-backdrop-filter: blur(12px); /* Pro Safari */
-  
-  display: flex;
-  align-items: center;
-}
-
-/* =========================================
-   3. HORNÍ LIŠTA (HEADER)
-   ========================================= */
-.top-bar {
-  top: 0;
-  height: calc(var(--header-height) + env(safe-area-inset-top));
-  padding-top: env(safe-area-inset-top); /* Odsazení pro Notch/Status bar */
-  padding-left: 16px;
-  padding-right: 16px;
-  border-bottom: 1px solid rgba(0,0,0,0.05);
-  justify-content: space-between;
-}
-
-/* Rozložení prvků v hlavičce */
-.header-left,
-.header-right {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.page-title {
-  flex: 1;
-  text-align: center;
-  font-size: 17px;
-  font-weight: 600;
-  margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Tlačítka v hlavičce */
-.icon-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 8px;
-  color: var(--text-main);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-}
-.icon-btn:active {
-  background-color: rgba(0,0,0,0.05); /* Efekt stisknutí */
-}
-
-/* =========================================
-   4. SPODNÍ NAVIGACE (BOTTOM TAB BAR)
-   ========================================= */
-.bottom-nav {
-  bottom: 0;
-  height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
-  padding-bottom: env(safe-area-inset-bottom); /* Odsazení pro spodní lištu iPhonu */
-  border-top: 1px solid rgba(0,0,0,0.05);
-  justify-content: space-around;
-}
-
-/* Jednotlivá položka menu */
-.nav-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  color: var(--text-muted);
-  height: 100%;
-  font-size: 11px;
-  font-weight: 500;
-  padding-top: 2px;
-}
-
-.nav-item span {
-  margin-top: 4px;
-}
-
-.nav-item.active {
-  color: var(--primary-color);
-}
-
-/* =========================================
-   5. HLAVNÍ OBSAH (SCROLLOVATELNÝ)
-   ========================================= */
-.content {
-  /* Dynamický výpočet odsazení */
-  padding-top: calc(var(--header-height) + env(safe-area-inset-top) + 16px);
-  padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + 16px);
-  padding-left: 8px;
-  padding-right: 8px;
-  
-  /* Plynulé scrollování */
-  -webkit-overflow-scrolling: touch; 
-}
-
-/* =========================================
-   6. KOMPONENTY (Karty, atd.)
-   ========================================= */
-.card {
-  background: white;
-  padding: 8px;
-  margin-bottom: 8px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(0,0,0,0.02);
-}
-
-/* Základní button styl (pokud používáš HTML <button>) */
-button.primary {
-  width: 100%;
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 12px;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 16px;
-  cursor: pointer;
+* {
+  -webkit-tap-highlight-color: transparent;
 }

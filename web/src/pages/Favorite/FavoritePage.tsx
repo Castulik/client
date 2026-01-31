@@ -1,13 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
-import { type PolozkaKosiku } from '../../types/types'; // Uprav cestu
-import './FavoritePage.css'; // Uprav cestu
-
-// Import nové komponenty
+import { type PolozkaKosiku } from '../../types/types'; 
 import { MealCard } from './components/MealCard';
 
-// Definice typu (pokud ji nemáš v types.ts, nech ji tady, nebo přesuň)
+// Poznámka: Interface klidně nech zde, pokud ho nepoužíváš jinde
 interface UlozeneJidlo {
   id: string;
   nazev: string;
@@ -18,7 +15,7 @@ interface UlozeneJidlo {
 export default function FavoritesPage() {
   const navigate = useNavigate();
 
-  // MOCK DATA
+  // MOCK DATA (Zatím beze změny)
   const [mojeJidla] = useState<UlozeneJidlo[]>([
     {
       id: 'j1',
@@ -48,18 +45,20 @@ export default function FavoritesPage() {
   };
 
   return (
-    <div className="home-container">
+    <div className="pb-10"> {/* Padding bottom aby obsah nekončil hned u lišty */}
       
       {/* Hlavička */}
-      <div className="fav-header">
-        <h2>Oblíbená jídla</h2>
-        <button className="add-meal-btn">
-          <Plus size={20} /> Sestavit
+      <div className="flex justify-between items-center mb-6 mt-2">
+        <h2 className="text-xl font-bold text-gray-800">Oblíbená jídla</h2>
+        
+        <button className="bg-primary text-white px-4 py-2 rounded-full flex items-center gap-1.5 font-semibold text-sm shadow-md shadow-blue-500/20 active:scale-95 transition-transform">
+          <Plus size={18} /> 
+          <span>Sestavit</span>
         </button>
       </div>
 
       {/* Seznam karet */}
-      <div className="meals-list">
+      <div className="flex flex-col">
         {mojeJidla.map((jidlo) => (
           <MealCard 
             key={jidlo.id} 
