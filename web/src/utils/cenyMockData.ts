@@ -1,4 +1,4 @@
-import testovaciData from '../pages/mock_data.json';
+import testovaciData from '../data/mock_data.json';
 import { BEZNE_CENY } from '../data/bezne_ceny';
 import { type DbProdukt, type PolozkaKosiku, type VysledekHledani, type VysledekObchodu, type DetailPolozky } from '../types/types';
 

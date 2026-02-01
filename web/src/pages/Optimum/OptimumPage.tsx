@@ -32,7 +32,7 @@ export default function OptimumPage() {
 
         // 1. Stáhneme data ze Supabase
         const { data, error } = await supabase
-            .from('products') 
+            .from('products')
             .select('*');
 
         if (error) {
@@ -42,36 +42,45 @@ export default function OptimumPage() {
         }
 
         if (!data) {
-             setLoading(false);
-             return;
+            setLoading(false);
+            return;
         }
 
         // 2. MAPPING (PŘEKLADAČ): Supabase DB -> Naše aplikace
         const realnaDataAkci: DbProdukt[] = data.map((row: any) => {
-            // Zkusíme odhadnout cenu po slevě
-            // Pokud je v DB 'current_price', bereme tu.
-            const cena = parseFloat(row.current_price_per_unit) || 0;
+            // Cena za měrnou jednotku (např. za 1 roli, 1 litr)
+            const unitPrice = parseFloat(row.current_price_per_unit) || 0;
+
+            // Pokusíme se zjistit cenu za balení (shelf_price)
+            // A) Máme ji v DB? Použijeme ji.
+            // B) Nemáme? Použijeme unitPrice (a doufáme, že to algorimus v ceny.ts dopočítá přes regex)
+            const shelfPrice = row.shelf_price ? parseFloat(row.shelf_price) : unitPrice;
+
+            // Pokusíme se zjistit velikost balení (amount)
+            const amount = row.amount ? parseFloat(row.amount) : 1;
 
             return {
-                id: String(row.id),  // Převedeme číslo na string
+                id: String(row.id),
                 name: row.name,
                 shop: row.shop,
                 category: row.category || 'Neurčeno',
-                
-                // CENA: Převedeme string "10.73" na číslo 10.73
-                shelf_price: cena, 
-                current_price_per_unit: cena,
+
+                // OPRAVENO: Pokud v DB existuje shelf_price, použijeme ji. 
+                // Jinak tam zatím dáme unitPrice, ale algoritmus v ceny.ts to pozná a zkusí dopočítat.
+                shelf_price: shelfPrice,
+
+                current_price_per_unit: unitPrice,
                 regular_price_per_unit: parseFloat(row.regular_price_per_unit) || 0,
-                
-                // SLEVA: Odstraníme mínus a převedeme na číslo ("-39.0" -> 39)
-                discount_percent: Math.abs(parseFloat(row.discount_percent)) || 0,
-                
+
+                discount_percent: parseFloat(row.discount_percent) || 0,
+
                 deal_score: row.deal_score || 0,
-                
-                // TODO: V budoucnu přidej do DB sloupce 'amount' a 'unit'
-                // Zatím budeme předstírat, že všechno je "1 ks"
-                amount: 1, 
-                unit: 'ks' 
+
+                // OPRAVENO: Bereme množství z DB, pokud existuje. Jinak 1.
+                amount: amount,
+
+                // Jednotka - ideálně by měla být taky v DB (např. 'l', 'kg', 'ks')
+                unit: row.unit || 'ks'
             };
         });
 
@@ -106,8 +115,8 @@ export default function OptimumPage() {
                         <h2 className="text-xl font-bold text-gray-800 mb-4 px-2">
                             🏆 Žebříček obchodů
                         </h2>
-                        <ShopRanking 
-                            results={zebricekObchodu} 
+                        <ShopRanking
+                            results={zebricekObchodu}
                             totalItemsCount={kosik.length}
                             expandedIndex={rozbalenyObchodIndex}
                             onToggle={toggleObchod}
