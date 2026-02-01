@@ -3,14 +3,13 @@ from bs4 import BeautifulSoup
 import json
 import re
 from datetime import datetime
-from core.parsers import clean_text
+from core.parsers import clean_text, clean_price, parse_amount 
 
 class KupiScraper:
     def __init__(self):
         self.url = 'https://www.kupi.cz'
         
     def __get_products_info(self, url:str, category:str=None, from_search:bool=False, max_pages:int=5):
-        """Privátní metoda pro stahování seznamu produktů."""
         response = requests.get(url)
 
         if response.status_code == 200:
@@ -32,36 +31,50 @@ class KupiScraper:
                     name_tag = name_div.find('strong')
                     name = name_tag.text.strip() if name_tag else "Unknown"
                     
-                    # Získání URL detailu a ID (DŮLEŽITÉ PRO HISTORII)
+                    # Získání URL
                     link_tag = name_div.find('a')
-                    product_url = None
-                    product_id = None
-                    
-                    if link_tag and link_tag.get('href'):
-                        href = link_tag['href']
-                        if not href.startswith('http'):
-                            product_url = self.url + href
-                        else:
-                            product_url = href
-                    
-                    # Pokus o získání ID z atributu nebo URL (zjednodušené)
-                    # V reálu si ID zjistíme až na detailu stránky v get_price_history,
-                    # ale URL potřebujeme už teď.
-                                    
+                    product_url = self.url + link_tag['href'] if link_tag else None
+
+                    # --- ZÍSKÁNÍ CENY A MNOŽSTVÍ ---
                     try:
-                        discounts_table = product.find('div', class_='discounts_table')
-                        shops = discounts_table.find_all('span', class_='discounts_shop_name')
-                    except:
+                        # 1. Najdeme řádek s akcí
+                        # Zde ponecháme 'div', protože discount_row bývá div, 
+                        # ale pro jistotu to taky můžeme uvolnit.
+                        discount_row = product.find(class_='discount_row')
+                        
+                        if not discount_row:
+                            # Fallback: Kdyby náhodou struktura byla jiná
+                            continue
+
+                        # 1. Obchod
+                        shop_tag = product.find('span', class_='discounts_shop_name')
+                        shop = clean_text(shop_tag.text) if shop_tag else "Unknown"
+
+                        # 2. Cena na regálu (Shelf Price)
+                        # OPRAVA: Smazáno 'div', hledáme jakýkoliv tag s touto třídou
+                        price_tag = discount_row.find(class_='discount_price_value')
+                        raw_price = price_tag.text if price_tag else "0"
+                        shelf_price = clean_price(raw_price)
+
+                        # 3. Množství a Jednotka (Amount & Unit)
+                        # OPRAVA: Smazáno 'div'
+                        amount_tag = discount_row.find(class_='discount_amount')
+                        raw_amount = amount_tag.text if amount_tag else ""
+                        amount, unit = parse_amount(raw_amount)
+
+                    except Exception as e:
+                        print(f"⚠️ Chyba parsování u {name}: {e}")
                         continue
                     
-                    # Uložíme základní info. Detailní ceny a historii budeme řešit zvlášť.
+                    # Uložíme info
                     product_list.append({
                         'name': name,
-                        'product_url': product_url, # Klíčové pro další krok
+                        'product_url': product_url,
                         'category': category,
-                        'shop': clean_text(shops[0].text) if shops else "Unknown" 
-                        # Poznámka: Zde bereme první obchod v seznamu. 
-                        # V reálu má produkt více obchodů, ale pro zjednodušení modelu bereme hlavní akci.
+                        'shop': shop,
+                        'shelf_price': shelf_price,
+                        'amount': amount,
+                        'unit': unit
                     })
                     
                 if end: break
@@ -74,7 +87,7 @@ class KupiScraper:
                 new_url = url + ('&page=' if from_search else '?page=') + str(page)
                 response = requests.get(new_url)
                 
-                if response.url != new_url and "page" not in response.url: # Kontrola přesměrování
+                if response.url != new_url and "page" not in response.url: 
                     end = True
                     break
                 

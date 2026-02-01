@@ -30,7 +30,14 @@ def save_product_to_db(product_info, metrics):
         "shop": product_info.get('shop', 'Neznámý'),
         "category": product_info.get('category', ''),
         
-        # Metriky z analytics.py
+        # --- NOVÉ POLOŽKY ---
+        # Pokud scraper nic nenašel, uložíme None nebo 0
+        "shelf_price": product_info.get('shelf_price', 0),
+        "amount": product_info.get('amount', 1), # Default 1, aby se dalo dělit
+        "unit": product_info.get('unit', 'ks'),
+        # --------------------
+
+        # Metriky z analytics.py (historie)
         "current_price_per_unit": metrics['current_price_per_unit'],
         "regular_price_per_unit": metrics['regular_price_per_unit'],
         "deal_score": metrics['deal_score'],
@@ -42,6 +49,6 @@ def save_product_to_db(product_info, metrics):
 
     try:
         response = supabase.table("products").upsert(data_payload, on_conflict="kupi_id").execute()
-        print(f"✅ Uloženo do DB: {product_info['name']} (Score: {metrics['deal_score']})")
+        print(f"✅ Uloženo: {product_info['name']} (Balení: {product_info.get('amount')}{product_info.get('unit')}, Cena: {product_info.get('shelf_price')})")
     except Exception as e:
-        print(f"❌ Chyba při ukládání do DB: {e}")
+        print(f"❌ Chyba DB: {e}")

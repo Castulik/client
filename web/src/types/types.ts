@@ -9,6 +9,14 @@ export interface ProduktDefinice {
   stitky?: string[]
 }
 
+export interface PolozkaKosiku {
+  id: string
+  nazev: string
+  pocet: number
+  jednotka: string
+  vybraneStitky: string[]
+}
+
 export interface DbProdukt {
   id: string;
   name: string;
@@ -44,12 +52,4 @@ export interface VysledekObchodu {
 export interface VysledekHledani {
   hledano: string;
   nalezeno: DbProdukt[];
-}
-
-export interface PolozkaKosiku {
-  id: string
-  nazev: string
-  pocet: number
-  jednotka: string
-  vybraneStitky: string[]
 }

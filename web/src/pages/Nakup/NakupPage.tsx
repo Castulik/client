@@ -37,7 +37,7 @@ export default function NakupPage() {
   const [databazePotravin, setDatabazePotravin] = useState<ProduktDefinice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- EFEKT: NAČTENÍ DAT ZE SUPABASE ---
+  // --- EFEKT: NAČTENÍ DAT ZE SUPABASE Databaze potravin ---
   useEffect(() => {
     const fetchProdukty = async () => {
       setIsLoading(true);
@@ -73,7 +73,7 @@ export default function NakupPage() {
 
   const [upravovaneId, setUpravovaneId] = useState<string | null>(null);
 
-  // --- EFEKTY ---
+  // --- EFEKTY kdyz uzivatel neco napise do textoveho pole zapneme tento effect ---
   useEffect(() => {
     if (vstup.trim() === '') {
       setnaseptavacProdukty([])
@@ -85,7 +85,7 @@ export default function NakupPage() {
     setnaseptavacProdukty(nalezene)
   }, [vstup, databazePotravin])
 
-  // --- FUNKCE ---
+  // --- FUNKCE, ktera po vybrani z naseptavace setuje moje promenne.
   const vyberProdukt = (produkt: ProduktDefinice) => {
     setVybranyProdukt(produkt)
     setVstup(produkt.nazev)
@@ -110,8 +110,10 @@ export default function NakupPage() {
 
   const editovatPolozku = (polozka: PolozkaKosiku) => {
     setUpravovaneId(polozka.id);
+    // je upravovana polozka v databazi potravin?
     const definice = databazePotravin.find(p => p.nazev === polozka.nazev);
 
+    //
     if (definice) {
       setVybranyProdukt(definice);
     } else {
@@ -149,6 +151,7 @@ export default function NakupPage() {
         .then(() => console.log('Odesláno do návrhů'));
     }
 
+    //uložení do košíku z editu
     if (upravovaneId) {
       setKosik(kosik.map(p => p.id === upravovaneId ? {
         ...p,
@@ -157,6 +160,7 @@ export default function NakupPage() {
         vybraneStitky: aktivniStitky
       } : p));
     }
+    //uložění do košíku normálně
     else {
       const novaPolozka: PolozkaKosiku = {
         id: crypto.randomUUID(),
