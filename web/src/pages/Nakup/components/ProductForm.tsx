@@ -57,22 +57,58 @@ export const ProductForm = ({
                         <X size={18} />
                     </button>
                 )}
+                {/* NAŠEPTÁVAČ SEZNAM */}
+                {naseptavacProdukty.map((prod) => {
+                // 1. Zjistíme, jestli jde o slevu
+                const jeSleva = prod.source === 'discount';
 
-                {naseptavacProdukty.length > 0 && !vybranyProdukt && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 max-h-60 overflow-y-auto z-50 divide-y divide-gray-50">
-                        {naseptavacProdukty.map(prod => (
-                            <div
-                                key={prod.id}
-                                className="px-4 py-3 cursor-pointer hover:bg-gray-50 active:bg-blue-50 flex items-center gap-3 transition-colors"
-                                onClick={() => onVybratZNaspetavace(prod)}
-                            >
-                                <span className="text-xl">{prod.icon}</span>
-                                <span className="font-medium text-gray-700">{prod.nazev}</span>
+                return (
+                    <div
+                        key={prod.id}
+                        className={`px-4 py-3 cursor-pointer flex items-center gap-3 transition-colors border-b border-gray-50 last:border-0
+                            ${jeSleva ? 'hover:bg-green-50' : 'hover:bg-gray-50 active:bg-blue-50'}`}
+                        onClick={() => onVybratZNaspetavace(prod)}
+                    >
+                        {/* A) IKONA */}
+                        <span className="text-2xl flex-shrink-0 w-8 text-center">{prod.icon}</span>
+
+                        {/* B) TEXTOVÝ OBSAH */}
+                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                            {/* Název produktu */}
+                            <div className={`font-medium truncate text-base ${jeSleva ? 'text-green-900' : 'text-gray-700'}`}>
+                                {prod.nazev}
                             </div>
-                        ))}
-                    </div>
-                )}
 
+                            {/* PODROBNOSTI - ZDE JE TA ZMĚNA */}
+                            {jeSleva && prod.shop ? (
+                                // Pokud je to sleva, ukážeme OBCHOD a CENU
+                                <div className="flex items-center gap-2 mt-0.5">
+                                    <span className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">
+                                        {prod.shop}
+                                    </span>
+                                    <span className="text-sm font-bold text-green-700">
+                                        {prod.price} Kč
+                                    </span>
+                                </div>
+                            ) : (
+                                // Pokud je to obecný produkt
+                                <span className="text-xs text-gray-400">Obecná položka</span>
+                            )}
+                        </div>
+
+                        {/* C) INDIKÁTOR VPRAVO */}
+                        <div className="text-gray-300">
+                            {jeSleva ? (
+                                <span className="text-green-500 text-xs font-bold border border-green-200 px-2 py-1 rounded-full bg-white">
+                                    AKCE
+                                </span>
+                            ) : (
+                                <PlusCircle size={18} />
+                            )}
+                        </div>
+                    </div>
+                );
+            })}
                 {naseptavacProdukty.length === 0 && isCustomMode && (
                     <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 z-50 p-2">
                         <div

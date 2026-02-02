@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { type ProduktDefinice, type PolozkaKosiku } from '../../types/types'
 import { supabase } from '../supabaseClient'
+// 👇 DŮLEŽITÉ: Import nové vyhledávací funkce
+import { searchProductsFuzzy } from '../../utils/ceny';
 
 // Import komponent
 import { QuickAddBar } from './components/QuickAddBar'
@@ -13,9 +15,8 @@ export default function NakupPage() {
 
   // --- STAVY (LOGIKA) ---
 
-  // 1. ZMĚNA: Inicializace košíku z LocalStorage
+  // 1. Inicializace košíku z LocalStorage
   const [kosik, setKosik] = useState<PolozkaKosiku[]>(() => {
-    // Pokusíme se načíst data z prohlížeče
     const ulozenaData = localStorage.getItem('nakupni_kosik');
     if (ulozenaData) {
       try {
@@ -25,23 +26,24 @@ export default function NakupPage() {
         return [];
       }
     }
-    // Pokud nic nemáme, vrátíme prázdné pole (už žádná testovací data)
     return [];
   });
 
-  // 2. ZMĚNA: Automatické ukládání při každé změně
+  // 2. Automatické ukládání při každé změně
   useEffect(() => {
     localStorage.setItem('nakupni_kosik', JSON.stringify(kosik));
-  }, [kosik]); // Spustí se vždy, když se změní 'kosik'
+  }, [kosik]);
 
   const [databazePotravin, setDatabazePotravin] = useState<ProduktDefinice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- EFEKT: NAČTENÍ DAT ZE SUPABASE Databaze potravin ---
+  // --- EFEKT: NAČTENÍ DAT PRO RYCHLOU VOLBU (QuickAddBar) ---
+  // Poznámka: Tohle necháváme, aby se načetly ikony pro spodní lištu,
+  // ale už to nepoužíváme pro hlavní vyhledávání.
   useEffect(() => {
     const fetchProdukty = async () => {
       setIsLoading(true);
-      const { data, error } = await supabase.from('global_products').select('*');
+      const { data, error } = await supabase.from('global_products').select('*').limit(20); // Stačí nám jich pár pro rychlou volbu
 
       if (error) {
         console.error('Chyba při načítání:', error);
@@ -73,26 +75,48 @@ export default function NakupPage() {
 
   const [upravovaneId, setUpravovaneId] = useState<string | null>(null);
 
-  // --- EFEKTY kdyz uzivatel neco napise do textoveho pole zapneme tento effect ---
+  // 🔥 NOVÁ LOGIKA VYHLEDÁVÁNÍ (Debounce + Supabase Fuzzy) 🔥
   useEffect(() => {
-    if (vstup.trim() === '') {
-      setnaseptavacProdukty([])
-      if (!vybranyProdukt) return
+    // 1. Pokud je vstup prázdný nebo moc krátký, vyčistíme našeptávač
+    if (!vstup || vstup.trim().length < 2) {
+      setnaseptavacProdukty([]);
+      return;
     }
-    const nalezene = databazePotravin.filter(p =>
-      p.nazev.toLowerCase().includes(vstup.toLowerCase())
-    )
-    setnaseptavacProdukty(nalezene)
-  }, [vstup, databazePotravin])
 
-  // --- FUNKCE, ktera po vybrani z naseptavace setuje moje promenne.
+    // Pokud už máme vybraný produkt a jen ho editujeme, nechceme hledat znovu
+    if (vybranyProdukt && vybranyProdukt.nazev === vstup) {
+        return;
+    }
+
+    // 2. Nastavíme časovač (Debounce 300ms)
+    const timeoutId = setTimeout(async () => {
+      console.log(`🔎 Hledám v DB výraz: "${vstup}"`);
+      
+      try {
+        // Voláme naší novou Supabase funkci
+        const vysledky = await searchProductsFuzzy(vstup);
+        setnaseptavacProdukty(vysledky);
+      } catch (err) {
+        console.error("Chyba při hledání:", err);
+      }
+    }, 300);
+
+    // 3. Cleanup: Zrušíme předchozí timer při psaní
+    return () => clearTimeout(timeoutId);
+
+  }, [vstup, vybranyProdukt]); // Sledujeme změnu vstupu
+
+
+  // --- FUNKCE PRO VÝBĚR A FORMULÁŘ ---
   const vyberProdukt = (produkt: ProduktDefinice) => {
     setVybranyProdukt(produkt)
     setVstup(produkt.nazev)
-    setJednotka(produkt.vychoziJednotka)
+    
+    // Ošetření pokud jednotky chybí
+    setJednotka(produkt.vychoziJednotka || 'ks')
     setPocet(1)
     setAktivniStitky([])
-    setnaseptavacProdukty([])
+    setnaseptavacProdukty([]) // Skryjeme našeptávač po výběru
   }
 
   const vyberVlastni = () => {
@@ -101,7 +125,8 @@ export default function NakupPage() {
       nazev: vstup,
       icon: '🛒',
       vychoziJednotka: 'ks',
-      mozneJednotky: ['ks', 'kg', 'l', 'g', 'balení']
+      mozneJednotky: ['ks', 'kg', 'l', 'g', 'balení'],
+      stitky: []
     };
     setVybranyProdukt(novyProdukt);
     setnaseptavacProdukty([]);
@@ -110,22 +135,17 @@ export default function NakupPage() {
 
   const editovatPolozku = (polozka: PolozkaKosiku) => {
     setUpravovaneId(polozka.id);
-    // je upravovana polozka v databazi potravin?
-    const definice = databazePotravin.find(p => p.nazev === polozka.nazev);
-
-    //
-    if (definice) {
-      setVybranyProdukt(definice);
-    } else {
-      setVybranyProdukt({
-        id: 'custom-item',
+    
+    // Zkusíme najít definici v tom, co máme načtené (pro rychlou volbu), 
+    // ale spíš si vytvoříme "mock" objekt, protože nemáme všechna data.
+    setVybranyProdukt({
+        id: 'edit-item',
         nazev: polozka.nazev,
-        icon: '✏️',
+        icon: '✏️', // Nebo zkusit najít ikonu, pokud chceme být fancy
         vychoziJednotka: polozka.jednotka,
         mozneJednotky: ['ks', 'kg', 'l', 'g', 'balení'],
         stitky: []
-      });
-    }
+    });
 
     setVstup(polozka.nazev);
     setPocet(polozka.pocet);
@@ -146,21 +166,23 @@ export default function NakupPage() {
   const pridatDoKosiku = async () => {
     if (!vybranyProdukt) return;
 
+    // Pokud je to úplně nová vlastní věc, můžeme ji poslat do návrhů (volitelné)
     if (vybranyProdukt.id === 'custom-item' && !upravovaneId) {
-      supabase.from('user_suggestions').insert([{ nazev: vybranyProdukt.nazev }])
-        .then(() => console.log('Odesláno do návrhů'));
+       // Logika pro user_suggestions (můžeš odkomentovat, pokud chceš)
+       // supabase.from('user_suggestions').insert([{ nazev: vybranyProdukt.nazev }]).then(...)
     }
 
-    //uložení do košíku z editu
+    // uložení do košíku z editu
     if (upravovaneId) {
       setKosik(kosik.map(p => p.id === upravovaneId ? {
         ...p,
+        nazev: vybranyProdukt.nazev, // Umožníme i přejmenování
         pocet: pocet,
         jednotka: jednotka,
         vybraneStitky: aktivniStitky
       } : p));
     }
-    //uložění do košíku normálně
+    // uložení do košíku normálně
     else {
       const novaPolozka: PolozkaKosiku = {
         id: crypto.randomUUID(),
@@ -182,6 +204,7 @@ export default function NakupPage() {
     setPocet(1);
     setJednotka('ks');
     setUpravovaneId(null);
+    setnaseptavacProdukty([]);
   }
 
   const smazPolozku = (id: string) => {
@@ -195,12 +218,6 @@ export default function NakupPage() {
   // --- VZHLED (RENDER) ---
   return (
     <div className="pb-32">
-      {isLoading && (
-        <div className="flex justify-center p-4">
-          <span className="text-gray-400 text-sm animate-pulse">Načítám databázi potravin...</span>
-        </div>
-      )}
-
       <ProductForm
         vstup={vstup}
         setVstup={setVstup}
@@ -219,6 +236,7 @@ export default function NakupPage() {
         submitLabel={upravovaneId ? '💾 Uložit změny' : undefined}
       />
 
+      {/* QuickAddBar zobrazíme jen když needitujeme a máme nějaká data */}
       {!isLoading && databazePotravin.length > 0 && !upravovaneId && (
         <QuickAddBar
           produkty={databazePotravin.slice(0, 8)}
