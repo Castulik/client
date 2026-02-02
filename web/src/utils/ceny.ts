@@ -262,17 +262,20 @@ export const searchProductsFuzzy = async (searchTerm: string): Promise<ProduktDe
   }
 
   // Mapování surových dat z DB na náš frontendový typ ProduktDefinice
+  // utils/ceny.ts (uvnitř searchProductsFuzzy)
+
   return (data || []).map((item: any) => ({
-    id: item.id,
-    nazev: item.nazev,
-    icon: item.icon || '🛒', // Fallback ikona
-    
-    // Defaultní hodnoty pro ProduktDefinice (protože DB vrací jen základ)
-    vychozi_jednotka: 'ks',
-    mozne_jednotky: ['ks', 'kg', 'balení'], 
-    stitky: [], // Zde bychom mohli v budoucnu tahat štítky z DB, pokud existují
-    
-    // Extra pole pro UI (abychom věděli, odkud položka je)
-    source: item.source 
+      id: item.id,
+      nazev: item.nazev,
+      icon: item.icon || '🛒',
+      
+      // 👇 OPRAVA: Přejmenováno na camelCase, aby to sedělo s komponentou
+      vychoziJednotka: 'ks',
+      mozneJednotky: ['ks', 'kg', 'balení'], 
+      stitky: [], 
+      
+      source: item.source,
+      shop: item.shop,
+      price: item.price
   }));
 };

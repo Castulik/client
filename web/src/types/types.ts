@@ -1,12 +1,18 @@
 // src/types.ts
 
 export interface ProduktDefinice {
-  id: string
-  nazev: string
-  icon: string
-  vychoziJednotka: string
-  mozneJednotky: string[]
-  stitky?: string[]
+  id: string;
+  nazev: string;
+  icon: string;
+  // Změň snake_case na camelCase:
+  vychoziJednotka: string; // Místo vychozi_jednotka
+  mozneJednotky: string[]; // Místo mozne_jednotky
+  stitky: string[];
+  
+  // Volitelné nové pole
+  source?: string;
+  shop?: string | null;
+  price?: number | null;
 }
 
 export interface PolozkaKosiku {
