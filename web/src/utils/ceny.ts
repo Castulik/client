@@ -1,13 +1,13 @@
 import { BEZNE_CENY } from '../data/bezne_ceny';
 import { type DbProdukt, type PolozkaKosiku, type VysledekHledani, type VysledekObchodu, type DetailPolozky, type ProduktDefinice } from '../types/types';
-import { supabase } from '../pages/supabaseClient'; // <--- PŘIDÁNO: Potřebujeme klienta pro RPC volání
+import { supabase } from '../pages/supabaseClient';
 
 // ==========================================
 // 1. KONFIGURACE A POMOCNÉ FUNKCE
 // ==========================================
 
 // Odstraní diakritiku a převede na malá písmena
-const normalize = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const normalize = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
 const LIMITY_PRO_KUSOVKY: Record<string, number> = {
   'toaletní papír': 7,
@@ -16,17 +16,40 @@ const LIMITY_PRO_KUSOVKY: Record<string, number> = {
   'vejce': 9,
 };
 
+// 🔥 VYLEPŠENÝ SLOVNÍK: Používáme kořeny slov (stems) pro lepší shodu
+// Např. 'mlek' najde 'mléko', 'mléka', 'mléčný'...
 const ROZSIRENE_HLEDANI: Record<string, string[]> = {
-  'pivo': ['pivo', 'pilsner', 'kozel', 'radegast', 'gambrinus', 'svijany', 'budvar'],
-  'mléko': ['mléko', 'trvanlivé', 'čerstvé', 'plnotučné', 'polotučné'],
-  'máslo': ['máslo', 'madeta', 'jihočeské'],
-  'kuřecí': ['kuřecí', 'prsa', 'řízky', 'čtvrtky', 'stehenní'],
-  'vejce': ['vejce', 'vajíčka'],
-  'pečivo': ['rohlík', 'houska', 'chléb', 'bageta', 'bulka', 'kaiserka'],
-  'zelenina': ['rajče', 'okurka', 'paprika', 'mrkev', 'brambory', 'cibule'],
-  'ovoce': ['jablko', 'banán', 'pomeranč', 'citron'],
-  'toaletní papír': ['toaletní', 'papír', 'tento', 'zewa', 'harmasan'],
-  'mouka': ['mouka', 'hladká', 'polohrubá', 'hrubá']
+  'pivo': ['pivo', 'piv', 'pilsner', 'kozel', 'radegast', 'gambrinus', 'svijany', 'budvar', 'ležák'],
+  'mléko': ['mlek', 'trvanliv', 'čerstv', 'plnotuč', 'polotuč', 'mléčn'],
+  'máslo': ['másl', 'madeta', 'jihočesk'],
+  'kuřecí': ['kuřec', 'prsa', 'řízky', 'čtvrtky', 'stehen'],
+  'vejce': ['vejc', 'vajíč'],
+  'pečivo': ['rohlík', 'housk', 'chléb', 'chleb', 'baget', 'bulk', 'kaiserk'],
+  'zelenina': ['rajč', 'okurk', 'paprik', 'mrkev', 'mrkv', 'brambor', 'cibul'],
+  'ovoce': ['jablk', 'banán', 'pomeranč', 'citron'],
+  'toaletní papír': ['toalet', 'papír', 'tento', 'zewa', 'harmasan'],
+  'mouka': ['mouk', 'hladk', 'polohrub', 'hrub'],
+  // Konkrétní položky, které se často liší koncovkou
+  'rajče': ['rajč', 'tomat'],
+  'rajčata': ['rajč', 'tomat'],
+  'brambory': ['brambor'],
+  'okurka': ['okurk', 'hadov'],
+  'cibule': ['cibul'],
+  'chléb': ['chléb', 'chleb', 'konzumní', 'šumava'],
+  'cukr': ['cukr', 'krupic', 'krystal'],
+  'olej': ['olej', 'slunečnic', 'řepkov'],
+  'kofola': ['kofol'],
+  'coca cola': ['coca', 'cola'],
+  'těstoviny': ['těstovin', 'špaget', 'fusilli', 'kolínk', 'penne']
+};
+
+/**
+ * Získá kořen slova (odstraní poslední písmeno, pokud je to samohláska nebo 'y')
+ * Pomáhá najít shodu mezi "Avokádo" a "Avokáda".
+ */
+const ziskatKorenSlova = (slovo: string): string => {
+    if (slovo.length < 4) return slovo; // Příliš krátká slova nekrátíme
+    return slovo.replace(/[aáeéěiíoóuúůyý]$/, ''); 
 };
 
 /**
@@ -65,16 +88,29 @@ export const spocitatCenyProObchody = (seznamPolozek: PolozkaKosiku[], databazeA
 
     for (const polozka of seznamPolozek) {
       const hledanyNazev = normalize(polozka.nazev);
-      const klicovaSlova = ROZSIRENE_HLEDANI[hledanyNazev] || hledanyNazev.split(' ');
-      const hledaneStitky = polozka.vybraneStitky.map(s => normalize(s));
+      
+      // 1. Získáme klíčová slova z našeho chytrého slovníku
+      let klicovaSlova = ROZSIRENE_HLEDANI[hledanyNazev];
 
+      // 2. Pokud ve slovníku nejsou, vytvoříme je dynamicky z názvu
+      if (!klicovaSlova) {
+          const slova = hledanyNazev.split(' ');
+          // Přidáme původní slova + jejich "ořezané" verze (kořeny)
+          klicovaSlova = [...slova, ...slova.map(ziskatKorenSlova)];
+      }
+
+      const hledaneStitky = polozka.vybraneStitky.map(s => normalize(s));
       const limitProMalyNakup = ziskatLimit(polozka.nazev);
       const jeVelkyNakup = polozka.jednotka === 'ks' && polozka.pocet > limitProMalyNakup;
 
+      // Filtrujeme produkty z daného obchodu
       let kandidati = databazeAkci.filter(p => p.shop === obchod);
 
+      // 🔥 HLAVNÍ FILTR: Hledáme shodu
       kandidati = kandidati.filter(p => {
         const jmenoProduktu = normalize(p.name);
+        // Stačí, aby název produktu obsahoval ALESPOŇ JEDNO klíčové slovo
+        // Příklad: "Rajče" -> klíč "rajč" -> najde "Rajčata keříková"
         return klicovaSlova.some(slovo => jmenoProduktu.includes(slovo));
       });
 
@@ -98,7 +134,12 @@ export const spocitatCenyProObchody = (seznamPolozek: PolozkaKosiku[], databazeA
 
           let skore = 0;
           hledaneStitky.forEach(stitek => { if (jmenoProduktu.includes(stitek)) skore += 100; });
+          
+          // Bonus za shodu s klíčovými slovy
           klicovaSlova.forEach(slovo => { if (jmenoProduktu.includes(slovo)) skore += 1; });
+          
+          // Bonus za přesnou shodu délky (aby "Mléko" nevyhrálo nad "Mléko 12ks" pokud nechceme)
+          // Ale tady to necháme jednoduché.
 
           let skutecnaCenaCelkem = 0;
           let pocetBaleniKeKoupi = 0;
@@ -147,11 +188,18 @@ export const spocitatCenyProObchody = (seznamPolozek: PolozkaKosiku[], databazeA
         });
 
       } else {
-        // FALLBACK
+        // FALLBACK NA BĚŽNÉ CENY
+        // I tady použijeme vylepšené hledání
         let beznaCenaKus = BEZNE_CENY[hledanyNazev];
+        
         if (!beznaCenaKus) {
-          const klic = klicovaSlova.find(k => BEZNE_CENY[k]);
-          if (klic) beznaCenaKus = BEZNE_CENY[klic];
+          // Zkusíme najít v BEZNE_CENY pomocí klíčových slov (stems)
+          // Projdeme všechny klíče v BEZNE_CENY a hledáme shodu
+          const nalezenaBezna = Object.keys(BEZNE_CENY).find(key => {
+             const normKey = normalize(key);
+             return klicovaSlova.some(slovo => normKey.includes(slovo));
+          });
+          if (nalezenaBezna) beznaCenaKus = BEZNE_CENY[nalezenaBezna];
         }
 
         if (beznaCenaKus) {
@@ -210,8 +258,13 @@ export const najitNejlepsiProduktyGlobalne = (seznamPolozek: PolozkaKosiku[], da
 
   for (const polozka of seznamPolozek) {
     const hledanyNazev = normalize(polozka.nazev);
-    const klicovaSlova = ROZSIRENE_HLEDANI[hledanyNazev] || hledanyNazev.split(' ');
-    const hledaneStitky = polozka.vybraneStitky.map(s => normalize(s));
+    
+    // Používáme stejnou vylepšenou logiku i zde
+    let klicovaSlova = ROZSIRENE_HLEDANI[hledanyNazev];
+    if (!klicovaSlova) {
+        const slova = hledanyNazev.split(' ');
+        klicovaSlova = [...slova, ...slova.map(ziskatKorenSlova)];
+    }
 
     let kandidati = databazeAkci.filter(p => {
       const jmeno = normalize(p.name);
@@ -221,7 +274,8 @@ export const najitNejlepsiProduktyGlobalne = (seznamPolozek: PolozkaKosiku[], da
     const obodovani = kandidati.map(p => {
       let skore = 0;
       const jmeno = normalize(p.name);
-      hledaneStitky.forEach(stitek => { if (jmeno.includes(stitek)) skore += 100; });
+      // Pokud je shoda s názvem, dáme skóre
+      klicovaSlova.forEach(slovo => { if (jmeno.includes(slovo)) skore += 1; });
       return { p, skore };
     });
 
@@ -239,18 +293,10 @@ export const najitNejlepsiProduktyGlobalne = (seznamPolozek: PolozkaKosiku[], da
 }
 
 // ==========================================
-// 4. FUZZY NAŠEPTÁVAČ (Novinka pro UI)
+// 4. FUZZY NAŠEPTÁVAČ
 // ==========================================
 
-/**
- * Volá RPC funkci 'search_products_fuzzy' v Supabase.
- * Kombinuje výsledky z:
- * 1. Globalních produktů ("Rajče")
- * 2. Živých slev ("Rajčata keříková Penny")
- * 3. Uživatelské historie ("Paprika bio")
- */
 export const searchProductsFuzzy = async (searchTerm: string): Promise<ProduktDefinice[]> => {
-  // Ochrana proti zbytečným requestům
   if (!searchTerm || searchTerm.length < 2) return [];
 
   const { data, error } = await supabase
@@ -261,19 +307,13 @@ export const searchProductsFuzzy = async (searchTerm: string): Promise<ProduktDe
     return [];
   }
 
-  // Mapování surových dat z DB na náš frontendový typ ProduktDefinice
-  // utils/ceny.ts (uvnitř searchProductsFuzzy)
-
   return (data || []).map((item: any) => ({
       id: item.id,
       nazev: item.nazev,
       icon: item.icon || '🛒',
-      
-      // 👇 OPRAVA: Přejmenováno na camelCase, aby to sedělo s komponentou
       vychoziJednotka: 'ks',
       mozneJednotky: ['ks', 'kg', 'balení'], 
       stitky: [], 
-      
       source: item.source,
       shop: item.shop,
       price: item.price
